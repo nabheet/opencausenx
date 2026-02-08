@@ -25,11 +25,12 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     console.log('🌱 Seeding database...');
 
-    // Create default user
+    // Create default user with fixed ID for API access
     const user = await prisma.user.upsert({
-        where: { email: 'demo@opencausenx.com' },
+        where: { id: 'default-user' },
         update: {},
         create: {
+            id: 'default-user',
             email: 'demo@opencausenx.com',
             name: 'Demo User',
         },
