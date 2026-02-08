@@ -1,0 +1,552 @@
+# OpenCausenx Copilot Instructions
+
+You are an AI assistant helping develop OpenCausenx, an explainable decision-intelligence platform that uses causal reasoning to help businesses understand how world events affect their operations.
+
+## Core Principles
+
+1. **Causal reasoning over correlation** - Always prioritize explicit cause-and-effect logic over data-driven patterns
+2. **Explainability over black-box predictions** - Every decision must be traceable and understandable
+3. **Transparency over complexity** - Surface uncertainty, confidence, and assumptions explicitly
+4. **No hype, no fake precision** - Avoid "AI magic" language; be honest about limitations
+
+## Architecture Overview
+
+### Key Layers
+
+- **Domain Layer** (`src/domain/`) - Core business logic, causal rules, event types
+- **Service Layer** (`src/services/`) - Event ingestion, insight generation, background jobs
+- **Presentation Layer** (`src/app/`) - Next.js pages, API routes, React components
+- **Data Layer** - PostgreSQL + Prisma ORM with explicit schema
+
+### Key Files
+
+- **Causal Rules**: `src/domain/causal-mapping/rules.ts` - Deterministic rules mapping events to impacts
+- **Domain Types**: `src/domain/models/types.ts` - Enums and interfaces for type safety
+- **Event Ingestion**: `src/services/event-ingestion/` - RSS/API parsing and normalization
+- **Insight Generation**: `src/services/insight-engine/generator.ts` - Orchestrates full pipeline
+- **Database**: `prisma/schema.prisma` - Complete schema with causal path tracking
+
+## Code Style Guidelines
+
+### 1. Always Document "WHY"
+
+Every significant piece of code should have a comment explaining **why** the decision was made:
+
+```typescript
+// WHY: We use deterministic rules rather than ML for causal inference
+// because we need full explainability - users must understand the logic
+const causalRules = mapEventToBusiness(event, businessModel);
+```
+
+### 2. Type Safety First
+
+- Use strict TypeScript (`strict: true` in tsconfig)
+- No `any` types except with explicit `// @ts-ignore` comment explaining why
+- Enums for finite sets (EventType, ImpactDirection, etc.)
+- Interfaces for domain models
+
+### 3. Clear Naming
+
+- Event types: `LABOR_MARKET_CHANGE`, `GDP_SLOWDOWN` (SCREAMING_SNAKE_CASE)
+- Variables: `causalPath`, `confidenceScore`, `assumptionPenalty` (camelCase)
+- Functions: `mapEventToBusiness()`, `calculateConfidence()` (verb-first, camelCase)
+
+### 4. Explicit Assumptions
+
+When making assumptions, document them:
+
+```typescript
+// ASSUMPTION: Labor wage increases flow through to hiring/retention costs
+// within 6 months (TIME_HORIZON_MEDIUM)
+const assumption = {
+    description: 'Wage pressure affects labor costs',
+    impactLevel: 'HIGH',
+    timeHorizon: 'MEDIUM',
+};
+```
+
+## When to Add Features
+
+### ✅ Good Additions
+
+- New event types (add to enum, add causal rule, add test)
+- New business model fields (add to template, add to sensitivity scoring)
+- Improved confidence calculation (document the formula)
+- Better explanation generation (LLM-based only, never for causal inference)
+- Real data source integration (RSS feeds, economic APIs)
+
+### ❌ Avoid
+
+- Machine learning for causal inference
+- Black-box prediction models
+- Hidden assumptions (always surface them explicitly)
+- Overly complex logic without clear business rationale
+- Comments that explain "what" instead of "why"
+
+## Database Changes
+
+When modifying the schema:
+
+1. Update `prisma/schema.prisma`
+2. Run `npm run db:migrate -- --name description_of_change`
+3. Update seed.ts if needed
+4. Document the change's purpose in comments
+
+## Testing Approach
+
+### Setup
+
+Install testing dependencies:
+
+```bash
+npm install -D vitest @testing-library/react @testing-library/jest-dom
+```
+
+Add to `package.json`:
+
+```json
+{
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  }
+}
+```
+
+### Unit Tests (Priority)
+
+Unit tests focus on isolated business logic with clear inputs and outputs.
+
+#### 1. Testing Causal Rules
+
+**File**: `src/domain/causal-mapping/rules.test.ts`
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { mapEventToBusiness } from './rules';
+import { EventType, ImpactDirection } from '../models/types';
+import { createTestEvent, createTestBusinessModel } from '../test-factories';
+
+describe('Causal Rules', () => {
+    it('should map LABOR_MARKET event to salary cost impact', () => {
+        // Arrange - create test data
+        const event = createTestEvent({
+            eventType: EventType.LABOR_MARKET_CHANGE,
+            summary: 'Wage growth accelerates',
+            region: 'US',
+            confidenceScore: 0.85,
+        });
+        
+        const business = createTestBusinessModel({ 
+            laborCostWeight: 0.4,
+            laborCostSensitivity: 0.8,
+        });
+
+        // Act - run the function
+        const result = mapEventToBusiness(event, business);
+
+        // Assert - verify clear expectations
+        expect(result).toBeDefined();
+        expect(result.isRelevant).toBe(true);
+        expect(result.impactDirection).toBe(ImpactDirection.NEGATIVE);
+        expect(result.impactMagnitude).toBeGreaterThan(0);
+    });
+
+    it('should skip events with low confidence', () => {
+        const event = createTestEvent({ confidenceScore: 0.3 });
+        const business = createTestBusinessModel();
+
+        const result = mapEventToBusiness(event, business);
+
+        expect(result.isRelevant).toBe(false);
+    });
+
+    it('should not apply impacts to regions the business is not exposed to', () => {
+        const event = createTestEvent({ region: 'ASIA' });
+        const business = createTestBusinessModel({ 
+            regions: ['US', 'EU'],
+        });
+
+        const result = mapEventToBusiness(event, business);
+
+        expect(result.isRelevant).toBe(false);
+    });
+});
+```
+
+#### 2. Testing Confidence Calculations
+
+**File**: `src/domain/models/Insight.test.ts`
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { calculateConfidence } from '../models/Insight';
+
+describe('Confidence Calculation', () => {
+    it('should calculate confidence as product of multiple factors', () => {
+        const confidence = calculateConfidence({
+            eventConfidence: 0.9,
+            pathConfidence: 0.8,
+            assumptionPenalty: 0.95,
+        });
+
+        // 0.9 * 0.8 * 0.95 = 0.684
+        expect(confidence).toBeCloseTo(0.684, 2);
+    });
+
+    it('should return 0 if any factor is 0', () => {
+        const confidence = calculateConfidence({
+            eventConfidence: 0,
+            pathConfidence: 0.8,
+            assumptionPenalty: 0.95,
+        });
+
+        expect(confidence).toBe(0);
+    });
+
+    it('should cap confidence at 1.0', () => {
+        const confidence = calculateConfidence({
+            eventConfidence: 1.0,
+            pathConfidence: 1.0,
+            assumptionPenalty: 1.0,
+        });
+
+        expect(confidence).toBeLessThanOrEqual(1.0);
+    });
+
+    it('should apply assumption penalty for complex causal paths', () => {
+        const directPath = calculateConfidence({
+            eventConfidence: 0.9,
+            pathConfidence: 0.9,
+            assumptionPenalty: 1.0, // No assumptions
+        });
+
+        const complexPath = calculateConfidence({
+            eventConfidence: 0.9,
+            pathConfidence: 0.9,
+            assumptionPenalty: 0.8, // 2-3 assumptions
+        });
+
+        expect(directPath).toBeGreaterThan(complexPath);
+    });
+});
+```
+
+#### 3. Testing Event Classification
+
+**File**: `src/services/event-ingestion/rss-fetcher.test.ts`
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { classifyEventType } from './rss-fetcher';
+import { EventType } from '../../domain/models/types';
+
+describe('Event Classification', () => {
+    it('should classify labor-related articles as LABOR_MARKET_CHANGE', () => {
+        const summary = 'Wage growth accelerates despite inflation concerns';
+        const classification = classifyEventType(summary);
+
+        expect(classification).toBe(EventType.LABOR_MARKET_CHANGE);
+    });
+
+    it('should classify GDP-related articles as GDP_CHANGE', () => {
+        const summary = 'GDP growth slows to 1.8% in Q4';
+        const classification = classifyEventType(summary);
+
+        expect(classification).toBe(EventType.GDP_CHANGE);
+    });
+
+    it('should classify regulation news as REGULATION_CHANGE', () => {
+        const summary = 'EU implements new data privacy regulations';
+        const classification = classifyEventType(summary);
+
+        expect(classification).toBe(EventType.REGULATION_CHANGE);
+    });
+
+    it('should handle multiple keywords in order of specificity', () => {
+        const summary = 'Minimum wage hike affects tech salaries';
+        
+        const classification = classifyEventType(summary);
+
+        // Should match the most specific classifier first (wage/salary)
+        expect(classification).toBe(EventType.LABOR_MARKET_CHANGE);
+    });
+
+    it('should return null for unclassifiable articles', () => {
+        const summary = 'New coffee shop opens downtown';
+        const classification = classifyEventType(summary);
+
+        expect(classification).toBeNull();
+    });
+});
+```
+
+### Test Factories (Essential!)
+
+Create reusable test data builders:
+
+**File**: `src/domain/test-factories.ts`
+
+```typescript
+import { Event, BusinessModel, Insight } from './models';
+import { EventType, ImpactDirection } from './models/types';
+import { faker } from '@faker-js/faker'; // optional but helpful
+
+export function createTestEvent(overrides?: Partial<Event>): Event {
+    return {
+        id: 'test-event-' + Math.random(),
+        eventType: EventType.LABOR_MARKET_CHANGE,
+        summary: faker?.lorem?.sentence() || 'Test event',
+        region: 'US',
+        timestamp: new Date(),
+        affectedEntities: ['SALARY'],
+        source: 'test',
+        sourceId: 'test-123',
+        confidenceScore: 0.85,
+        metadata: {},
+        ...overrides,
+    };
+}
+
+export function createTestBusinessModel(overrides?: Partial<BusinessModel>): BusinessModel {
+    return {
+        id: 'test-bm-' + Math.random(),
+        userId: 'test-user',
+        name: 'Test SaaS',
+        industry: 'SAAS',
+        revenueSources: {
+            subscriptions: 0.8,
+            services: 0.2,
+        },
+        costDrivers: {
+            laborCosts: { weight: 0.4, sensitivity: 0.8 },
+            infrastructureCosts: { weight: 0.3, sensitivity: 0.6 },
+        },
+        regions: ['US', 'EU'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides,
+    };
+}
+
+export function createTestInsight(overrides?: Partial<Insight>): Insight {
+    return {
+        id: 'test-insight-' + Math.random(),
+        businessModelId: 'test-bm-123',
+        eventId: 'test-event-123',
+        impactDirection: ImpactDirection.NEGATIVE,
+        impactMagnitude: 0.15,
+        confidenceScore: 0.75,
+        confidenceRationale: 'High event confidence, clear causal path',
+        causalPath: [
+            { step: 1, description: 'Wage pressure increases' },
+            { step: 2, description: 'Hiring costs rise' },
+            { step: 3, description: 'Operating margin compresses' },
+        ],
+        assumptions: [
+            { description: 'Wage increases affect hiring within 6 months', impactLevel: 'HIGH' },
+        ],
+        explanation: 'Higher wages compress margins for SaaS',
+        generatedAt: new Date(),
+        ...overrides,
+    };
+}
+```
+
+### Integration Tests
+
+**File**: `src/services/insight-engine/generator.test.ts`
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { generateInsightsForBusiness } from './generator';
+import { prisma } from '../../lib/prisma';
+import { createTestBusinessModel, createTestEvent } from '../../domain/test-factories';
+
+describe('Insight Generation Pipeline', () => {
+    let userId: string;
+    let businessModelId: string;
+
+    beforeEach(async () => {
+        // Setup: create test data in database
+        userId = 'test-' + Date.now();
+        const user = await prisma.user.create({
+            data: { email: `test-${Date.now()}@test.com` },
+        });
+
+        const bm = await prisma.businessModel.create({
+            data: {
+                userId: user.id,
+                name: 'Test Company',
+                // ... rest of fields
+            },
+        });
+        businessModelId = bm.id;
+    });
+
+    afterEach(async () => {
+        // Cleanup: remove test data
+        await prisma.insight.deleteMany({ where: { businessModelId } });
+        await prisma.businessModel.delete({ where: { id: businessModelId } });
+        await prisma.user.delete({ where: { id: userId } });
+    });
+
+    it('should generate insights from recent events', async () => {
+        const result = await generateInsightsForBusiness(businessModelId);
+
+        expect(result.created).toBeGreaterThan(0);
+        expect(result.errors).toBe(0);
+    });
+
+    it('should not duplicate existing insights', async () => {
+        await generateInsightsForBusiness(businessModelId);
+        const firstRun = await prisma.insight.count({
+            where: { businessModelId },
+        });
+
+        await generateInsightsForBusiness(businessModelId);
+        const secondRun = await prisma.insight.count({
+            where: { businessModelId },
+        });
+
+        expect(firstRun).toBe(secondRun);
+    });
+});
+```
+
+### Test Naming Conventions
+
+- **Describe**: What component/function is being tested
+- **It**: What should happen (use `should` or `when`)
+
+Good names:
+
+```
+✓ should calculate confidence as product of multiple factors
+✓ should return 0 if any factor is 0
+✓ should skip events with low confidence
+✗ test confidence (too vague)
+✗ calculateConfidence (describes function, not behavior)
+```
+
+### Test Best Practices
+
+1. **Arrange-Act-Assert (AAA) Pattern**
+   - Arrange: Set up test data
+   - Act: Call the function
+   - Assert: Verify results
+
+2. **One assertion per test** (or related assertions)
+   - Makes it clear what broke
+   - Easy to debug
+
+3. **Test edge cases**
+   - Zero/null values
+   - Empty collections
+   - Boundary conditions
+   - Invalid inputs
+
+4. **Use descriptive variable names**
+   - `highConfidenceEvent` not `e1`
+   - `laborCostSensitivity` not `x`
+
+5. **Don't test external dependencies**
+   - Mock database calls
+   - Mock API calls
+   - Focus on logic, not infrastructure
+
+6. **Test assumptions explicitly**
+   - If "wage increases affect hiring within 6 months", test that timeframe
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific file
+npm test -- rules.test.ts
+
+# Watch mode
+npm test -- --watch
+
+# Coverage report
+npm test:coverage
+```
+
+### Coverage Goals
+
+- **Domain logic** (rules, models): >90% coverage
+- **Services** (ingestion, generation): >80% coverage
+- **API routes**: >70% coverage (focus on happy path)
+- **UI components**: >60% coverage (focus on critical paths)
+
+## Common Patterns
+
+### Creating a New Event Type
+
+1. Add to `EventType` enum in `src/domain/models/types.ts`
+2. Add causal rule to `src/domain/causal-mapping/rules.ts`
+3. Document explicit assumptions
+4. Test with sample events
+
+### Adding Business Driver
+
+1. Add field to `BusinessModel` in `src/domain/models/BusinessModel.ts`
+2. Add to SaaS template defaults in `src/domain/business-templates/saas.ts`
+3. Add sensitivity weighting in causal mapping
+4. Document assumptions about impact
+
+### Creating API Endpoint
+
+1. Create file in `src/app/api/feature/route.ts`
+2. Use Prisma for DB access
+3. Add type-safe request/response
+4. Document expected behavior in comments
+
+## LLM Integration
+
+- LLMs are used **ONLY** for explanation synthesis (converting causal chains to natural language)
+- Never use LLMs for causal inference or prediction
+- Always include confidence scores and assumption limits
+- Make the integration optional (app works without it)
+
+## Performance Considerations
+
+- Background jobs run every 30-60 minutes (adjustable in `.env`)
+- Insight generation is batch-processed (not real-time)
+- Database queries should use proper indexing (document in schema)
+- Connection pooling via Prisma adapter (using `pg` driver)
+
+## Questions to Ask Before Coding
+
+1. **Why** are we adding this? (business value)
+2. **What assumptions** are we making?
+3. **How confident** are we in this logic?
+4. **Can users understand** the reasoning?
+5. **What happens** if we're wrong?
+
+## Documentation
+
+- Update [README.md](README.md) for major changes
+- Keep [QUICKSTART.md](QUICKSTART.md) current for getting-started
+- Add inline comments explaining non-obvious logic
+- Document all assumptions explicitly
+
+## Git Conventions
+
+- Branch naming: `feature/event-type-labor` or `fix/confidence-calculation`
+- Commit messages: "Add labor market event type with causal rules" (descriptive, present tense)
+- Include WHY in commit body, not just WHAT
+
+## Environment Setup Reminders
+
+- Database: PostgreSQL (Docker via docker-compose)
+- NODE_ENV: Leave unset (dotenv loads .env.local automatically)
+- DATABASE_URL: Set in .env.local (not committed)
+- LLM keys: Optional (app works without them)
+
+---
+
+**Remember**: The goal is to build a **trustworthy, explainable system** where users understand exactly how their insights are generated. Complexity is fine if needed, but obscurity is not.
