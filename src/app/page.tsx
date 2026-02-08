@@ -1,63 +1,144 @@
-import Image from "next/image";
+/**
+ * Main Dashboard Page
+ * 
+ * WHY: Central hub showing events, risks, and changes
+ */
 
-export default function Home() {
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { EventFeed } from '@/components/dashboard/EventFeed';
+import { RiskSummary } from '@/components/dashboard/RiskSummary';
+import Link from 'next/link';
+
+export default function DashboardPage() {
+  const [businessModel, setBusinessModel] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBusinessModel();
+  }, []);
+
+  const fetchBusinessModel = async () => {
+    try {
+      const response = await fetch('/api/business-model?userId=default-user');
+      const data = await response.json();
+      if (data.businessModels && data.businessModels.length > 0) {
+        setBusinessModel(data.businessModels[0]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch business model:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateInsights = async () => {
+    if (!businessModel) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch('/api/insights/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessModelId: businessModel.id,
+          useLLM: true,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(
+          `Generated ${data.result.created} new insights! (${data.result.skipped} skipped, ${data.result.errors} errors)`
+        );
+        // Refresh the page to show new insights
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to generate insights:', error);
+      alert('Failed to generate insights');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">OpenCausenx</h1>
+              <p className="text-gray-600 mt-1">
+                Explainable decision intelligence for your business
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              {businessModel && (
+                <button
+                  onClick={handleGenerateInsights}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition"
+                >
+                  {loading ? 'Generating...' : 'Generate Insights'}
+                </button>
+              )}
+              <Link
+                href="/business-model"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+              >
+                Configure Business Model
+              </Link>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!businessModel && !loading ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Welcome to OpenCausenx
+            </h2>
+            <p className="text-gray-600 mb-6">
+              To get started, configure your business model so we can analyze
+              how world events affect your business.
+            </p>
+            <Link
+              href="/business-model"
+              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Configure Business Model
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column: Events */}
+            <div className="space-y-8">
+              <EventFeed />
+            </div>
+
+            {/* Right Column: Insights */}
+            <div className="space-y-8">
+              {businessModel && <RiskSummary businessModelId={businessModel.id} />}
+            </div>
+          </div>
+        )}
+
+        {/* Info Footer */}
+        <div className="mt-12 p-6 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            About OpenCausenx
+          </h3>
+          <p className="text-blue-800 text-sm">
+            OpenCausenx uses <strong>explainable causal reasoning</strong> to
+            show how world events affect your business. We prioritize
+            transparency over black-box predictions. Every insight includes the
+            reasoning chain, assumptions, and confidence scores.
+          </p>
         </div>
       </main>
     </div>

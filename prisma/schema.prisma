@@ -1,0 +1,131 @@
+// OpenCausenx Database Schema
+// This schema captures world events, business models, causal mappings, and generated insights
+// with full explainability and confidence tracking.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model (can be expanded with proper auth)
+model User {
+  id              String         @id @default(cuid())
+  email           String         @unique
+  name            String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  businessModels  BusinessModel[]
+}
+
+// External data sources (RSS feeds, APIs, etc.)
+// WHY: Track source reliability for confidence scoring
+model EventSource {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // RSS, API, MANUAL
+  url         String?
+  country     String?  // ISO country code for regional sources
+  active      Boolean  @default(true)
+  reliability Float    @default(0.7) // 0-1: used in confidence calculations
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]
+}
+
+// Normalized world events
+// WHY: Unified schema regardless of source ensures consistent causal mapping
+model Event {
+  id               String      @id @default(cuid())
+  eventType        String      // REGULATION_CHANGE, ECONOMIC_INDICATOR, GEOPOLITICAL, LABOR_MARKET, etc.
+  summary          String      @db.Text
+  region           String      // ISO country code (country-level only per MVP scope)
+  timestamp        DateTime    // When the event occurred or was reported
+  affectedEntities String[]    // Types of entities affected (e.g., ["TECH_COMPANIES", "LABOR_FORCE"])
+  source           String      // Source name or URL for provenance
+  sourceId         String?
+  confidenceScore  Float       @default(0.5) // 0-1: based on source reliability and event clarity
+  metadata         Json?       // Additional structured data (raw indicators, URLs, etc.)
+  createdAt        DateTime    @default(now())
+  
+  eventSource      EventSource? @relation(fields: [sourceId], references: [id])
+  insights         Insight[]
+  
+  @@index([eventType, region, timestamp])
+  @@index([timestamp])
+}
+
+// Business model configuration
+// WHY: Explicit model of business structure enables deterministic causal mapping
+model BusinessModel {
+  id                String    @id @default(cuid())
+  userId            String
+  name              String    @default("My SaaS Business")
+  industry          String    @default("SAAS") // MVP: only SAAS supported
+  
+  // Revenue structure
+  // WHY: Knowing revenue sources helps identify which events matter
+  // Example: {subscription_revenue: 0.8, usage_revenue: 0.2}
+  revenueDrivers    Json
+  
+  // Cost structure
+  // WHY: Maps to event types that affect costs
+  // Example: {labor_costs: 0.4, infrastructure: 0.3, sales_marketing: 0.2, other: 0.1}
+  costDrivers       Json
+  
+  // Sensitivities to external factors
+  // WHY: Determines impact magnitude in causal mapping
+  // Example: {labor: 0.8, infrastructure: 0.5, fx: 0.3, regulation: 0.6}
+  sensitivities     Json
+  
+  // Geographic exposure
+  // WHY: Only events in relevant regions generate insights
+  operatingRegions  String[]  // Where the company operates (ISO codes)
+  customerRegions   String[]  // Where customers are located
+  
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user              User      @relation(fields: [userId], references: [id])
+  insights          Insight[]
+  
+  @@index([userId, active])
+}
+
+// Generated insights with full explainability
+// WHY: Insights track causal reasoning, assumptions, and confidence—no black boxes
+model Insight {
+  id                 String        @id @default(cuid())
+  businessModelId    String
+  eventId            String
+  
+  // Core insight content
+  summary            String        @db.Text // Plain-English impact summary
+  impactDirection    String        // INCREASE, DECREASE, NEUTRAL
+  impactMagnitude    String        // LOW, MEDIUM, HIGH
+  timeHorizon        String        // SHORT (0-3mo), MEDIUM (3-12mo), LONG (12mo+)
+  affectedDrivers    String[]      // Which business drivers are impacted (revenue/cost)
+  
+  // Explainability (CRITICAL for trust)
+  // WHY: Users must understand HOW we reached this conclusion
+  causalPath         Json          // Step-by-step reasoning: event → intermediate effects → business impact
+  assumptions        Json          // All assumptions made (e.g., "assumes labor costs are 40% of total costs")
+  confidenceScore    Float         // 0-1: overall confidence in this insight
+  confidenceRationale String       @db.Text // WHY this confidence level (source quality, mapping directness, etc.)
+  llmExplanation     String?       @db.Text // Optional LLM-generated plain-English explanation
+  
+  // Metadata
+  generatedAt        DateTime      @default(now())
+  dismissed          Boolean       @default(false) // User can dismiss insights
+  userNotes          String?       @db.Text
+  
+  businessModel      BusinessModel @relation(fields: [businessModelId], references: [id])
+  event              Event         @relation(fields: [eventId], references: [id])
+  
+  @@index([businessModelId, generatedAt])
+  @@index([eventId])
+  @@index([dismissed, generatedAt])
+}
