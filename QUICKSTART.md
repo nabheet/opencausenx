@@ -26,10 +26,10 @@ Copy the example environment file:
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and update the `DATABASE_URL`:
+Edit `.env.local` if needed. The defaults work for local development, but you can customize:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/opencausenx?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/opencausenx"  # If using non-default DB
 ```
 
 **Optional**: Add an OpenAI or Anthropic API key to enable LLM-generated explanations:
@@ -42,34 +42,21 @@ ANTHROPIC_API_KEY="sk-ant-your-key-here"
 
 ### 3. Set Up the Database
 
-Run database migrations to create tables:
+Run database migrations and seed sample data:
 
 ```bash
-npx prisma migrate dev --name init
-```
-
-Generate Prisma client:
-
-```bash
-npx prisma generate
-```
-
-### 4. Seed Sample Data (Optional but Recommended)
-
-Load sample events and a demo business model:
-
-```bash
+npm run db:migrate
 npm run db:seed
 ```
 
-This creates:
+This creates the database schema and loads:
 
 - A demo user account
-- Sample event sources (Reuters, Economic Indicators)
-- 4 sample world events (labor market, infrastructure, GDP, regulation)
+- Sample event sources
+- Sample world events
 - A sample SaaS business model
 
-### 5. Start the Development Server
+### 4. Start the Development Server
 
 ```bash
 npm run dev

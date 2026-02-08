@@ -179,7 +179,8 @@ opencausenx/
 ### Prerequisites
 
 - **Node.js 18+**
-- **PostgreSQL 14+**
+- **PostgreSQL 14+** (running locally or accessible)
+  - **Quick start**: Use Docker: `docker-compose up -d`
 - **npm** or **pnpm**
 
 ### Installation
@@ -203,19 +204,22 @@ opencausenx/
    cp .env.example .env.local
    ```
 
-   Edit `.env.local` and configure:
+   Edit `.env.local` if needed. The defaults work for local development, but you can customize:
 
    ```env
-   DATABASE_URL="postgresql://user:password@localhost:5432/opencausenx"
-   OPENAI_API_KEY="your-key-here"  # Optional
+   DATABASE_URL="postgresql://user:password@localhost:5432/opencausenx"  # If using non-default DB
+   OPENAI_API_KEY="your-key-here"       # Optional: for explanations
+   ANTHROPIC_API_KEY="your-key-here"    # Optional: alternative to OpenAI
    ```
 
 4. **Set up the database**
 
    ```bash
-   npx prisma migrate dev --name init
-   npx prisma generate
+   npm run db:migrate
+   npm run db:seed
    ```
+
+   This creates the schema and loads sample data (demo user, event sources, events).
 
 5. **Run the development server**
 
@@ -228,22 +232,18 @@ opencausenx/
 
 ### Initial Setup
 
-1. **Configure your business model**
-   - Click "Configure Business Model"
-   - Create from SaaS template
-   - Customize regions if needed
+1. **Open the dashboard**
+   - Navigate to [http://localhost:3000](http://localhost:3000)
+   - You'll see recent global events and a demo business model
 
-2. **Ingest events** (for development/testing)
+2. **Generate insights**
+   - Click "Generate Insights" in the header
+   - The system will analyze events and generate causal insights for the SaaS business model
+   - Processing typically takes a few seconds
 
-   ```bash
-   # In a separate terminal
-   node -e "require('./src/services/background-jobs/jobs').fetchAndIngestEvents()"
-   ```
-
-3. **Generate insights**
-   - Return to dashboard
-   - Click "Generate Insights"
-   - Wait for processing to complete
+3. **Explore results**
+   - Click on any insight to see the causal reasoning and confidence score
+   - View event details and how they map to business impact
 
 ---
 
@@ -574,7 +574,11 @@ OpenCausenx is designed to be extended. We welcome:
 
 ## License
 
-MIT License. See `LICENSE` file for details.
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0).
+
+See the [LICENSE](LICENSE) file for full details.
+
+**Key terms**: This software is free to use, modify, and distribute. Any derivative work must also be open-source under the same GPL-3.0 license. This ensures OpenCausenx remains transparent and accessible to all.
 
 ---
 
