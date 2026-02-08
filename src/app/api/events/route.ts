@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Event } from '@/domain/models/Event';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '20');
         const region = searchParams.get('region');
 
-        const where: any = {};
+        const where: Prisma.EventWhereInput = {};
         if (region) {
             where.region = region;
         }

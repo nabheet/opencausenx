@@ -8,6 +8,7 @@
 import { Event } from '@/domain/models/Event';
 import { EventType, AffectedEntity } from '@/domain/models/types';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import {
     RSSItem,
     RSSFeed,
@@ -154,7 +155,7 @@ export async function saveEvents(
                     source: eventInput.source,
                     sourceId: eventInput.sourceId,
                     confidenceScore: eventInput.confidenceScore,
-                    metadata: (eventInput.metadata || {}) as any,
+                    metadata: (eventInput.metadata || {}) as Prisma.JsonObject,
                 },
             });
 

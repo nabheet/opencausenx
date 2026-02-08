@@ -10,9 +10,10 @@ import React, { useEffect, useState } from 'react';
 import { EventFeed } from '@/components/dashboard/EventFeed';
 import { RiskSummary } from '@/components/dashboard/RiskSummary';
 import Link from 'next/link';
+import { BusinessModelConfig } from '@/domain/models/types';
 
 export default function DashboardPage() {
-  const [businessModel, setBusinessModel] = useState<any>(null);
+  const [businessModel, setBusinessModel] = useState<BusinessModelConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

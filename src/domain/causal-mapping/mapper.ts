@@ -8,15 +8,15 @@
 import { Event } from '../models/Event';
 import { BusinessModel } from '../models/BusinessModel';
 import {
-    EventType,
     BusinessDriverType,
     ImpactDirection,
     ImpactMagnitude,
     TimeHorizon,
     CausalStep,
     Assumption,
+    SensitivityFactor,
 } from '../models/types';
-import { getCausalRule, isHighConfidenceRule } from './rules';
+import { getCausalRule, isHighConfidenceRule, CausalRule } from './rules';
 import { getAssumptionsForEventType, validateAssumptionsForBusiness } from './assumptions';
 
 /**
@@ -194,7 +194,7 @@ function buildBusinessContext(
  * Determine impact direction based on event details
  * WHY: Some events clearly increase or decrease costs/risks
  */
-function determineImpactDirection(event: Event, rule: any): ImpactDirection {
+function determineImpactDirection(event: Event, rule: CausalRule): ImpactDirection {
     const summary = event.summary.toLowerCase();
 
     // Look for directional keywords
@@ -230,7 +230,7 @@ function calculateImpactMagnitude(
     event: Event,
     businessModel: BusinessModel,
     affectedDrivers: BusinessDriverType[],
-    sensitivityFactor: any
+    sensitivityFactor: SensitivityFactor
 ): ImpactMagnitude {
     // Calculate weighted impact
     let totalWeight = 0;
@@ -260,7 +260,7 @@ function calculateConfidence(
     event: Event,
     causalPath: CausalStep[],
     businessModel: BusinessModel,
-    sensitivityFactor: any,
+    sensitivityFactor: SensitivityFactor,
     assumptionCount: number
 ): number {
     // Start with event confidence

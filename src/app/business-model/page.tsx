@@ -9,10 +9,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createSaaSTemplate, SAAS_TEMPLATE_EXPLANATION } from '@/domain/business-templates/saas';
+import { BusinessModelConfig } from '@/domain/models/types';
 
 export default function BusinessModelPage() {
     const [loading, setLoading] = useState(false);
-    const [existingModel, setExistingModel] = useState<any>(null);
+    const [existingModel, setExistingModel] = useState<BusinessModelConfig | null>(null);
+    // Note: useTemplate is defined but intentionally not used in MVP
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [useTemplate, setUseTemplate] = useState(true);
 
     useEffect(() => {

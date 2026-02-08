@@ -6,7 +6,7 @@
  */
 
 import { EventType, AffectedEntity, EventModel } from './types';
-import { Event as PrismaEvent, EventSource as PrismaEventSource } from '@prisma/client';
+import { Event as PrismaEvent } from '@prisma/client';
 
 export class Event implements EventModel {
     id: string;

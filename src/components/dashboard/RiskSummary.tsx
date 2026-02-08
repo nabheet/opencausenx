@@ -8,22 +8,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { InsightCard } from '../insights/InsightCard';
+import { InsightModel } from '@/domain/models/types';
 
 interface RiskSummaryProps {
     businessModelId: string;
 }
 
 export function RiskSummary({ businessModelId }: RiskSummaryProps) {
-    const [insights, setInsights] = useState<any[]>([]);
+    const [insights, setInsights] = useState<InsightModel[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (businessModelId) {
-            fetchInsights();
-        }
-    }, [businessModelId]);
-
-    const fetchInsights = async () => {
+    const fetchInsights = React.useCallback(async () => {
         try {
             const response = await fetch(
                 `/api/insights?businessModelId=${businessModelId}`
@@ -35,7 +30,13 @@ export function RiskSummary({ businessModelId }: RiskSummaryProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [businessModelId]);
+
+    useEffect(() => {
+        if (businessModelId) {
+            fetchInsights();
+        }
+    }, [businessModelId, fetchInsights]);
 
     const highImpactInsights = insights.filter(
         (i) => i.impactMagnitude === 'HIGH'

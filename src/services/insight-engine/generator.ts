@@ -11,10 +11,10 @@
 import { prisma } from '@/lib/prisma';
 import { Event } from '@/domain/models/Event';
 import { BusinessModel } from '@/domain/models/BusinessModel';
-import { Insight } from '@/domain/models/Insight';
-import { mapEventToBusiness, batchMapEventsToBusiness } from '@/domain/causal-mapping/mapper';
+import { mapEventToBusiness, batchMapEventsToBusiness, CausalMapping } from '@/domain/causal-mapping/mapper';
 import { generateLLMExplanation, generateBasicExplanation } from './llm-explainer';
 import { BusinessDriverType } from '@/domain/models/types';
+import { Event as PrismaEvent } from '@prisma/client';
 
 /**
  * Generate insights for a specific business model
@@ -52,7 +52,7 @@ export async function generateInsightsForBusiness(
             },
         });
 
-        const events = recentEvents.map((e: any) => Event.fromPrisma(e));
+        const events = recentEvents.map((e: PrismaEvent) => Event.fromPrisma(e));
 
         // Apply causal mapping
         const mappings = batchMapEventsToBusiness(events, businessModel);
@@ -102,8 +102,8 @@ export async function generateInsightsForBusiness(
                         impactMagnitude: mapping.impactMagnitude,
                         timeHorizon: mapping.timeHorizon,
                         affectedDrivers: mapping.affectedDrivers,
-                        causalPath: mapping.causalPath as any,
-                        assumptions: mapping.assumptions as any,
+                        causalPath: mapping.causalPath,
+                        assumptions: mapping.assumptions,
                         confidenceScore: mapping.confidenceScore,
                         confidenceRationale: mapping.confidenceRationale,
                         llmExplanation,
@@ -158,7 +158,7 @@ export async function generateInsightsForAllBusinesses(
  * Generate a concise summary for an insight
  * WHY: One-line summary for dashboard display
  */
-function generateInsightSummary(mapping: any): string {
+export function generateInsightSummary(mapping: CausalMapping): string {
     const { event, impactDirection, impactMagnitude, affectedDrivers } = mapping;
 
     const directionText =
@@ -249,8 +249,8 @@ export async function regenerateStaleInsights(
                     impactMagnitude: mapping.impactMagnitude,
                     timeHorizon: mapping.timeHorizon,
                     affectedDrivers: mapping.affectedDrivers,
-                    causalPath: mapping.causalPath as any,
-                    assumptions: mapping.assumptions as any,
+                    causalPath: mapping.causalPath,
+                    assumptions: mapping.assumptions,
                     confidenceScore: mapping.confidenceScore,
                     confidenceRationale: mapping.confidenceRationale,
                     llmExplanation,

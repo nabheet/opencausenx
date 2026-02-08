@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { BusinessModel } from '@/domain/models/BusinessModel';
+import { BusinessModel as PrismaBusinessModel } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: 'desc' },
         });
 
-        const models = businessModels.map((bm: any) => BusinessModel.fromPrisma(bm));
+        const models = businessModels.map((bm: PrismaBusinessModel) => BusinessModel.fromPrisma(bm));
 
         return NextResponse.json({ businessModels: models });
     } catch (error) {

@@ -13,7 +13,6 @@ import {
     BusinessDriverType,
     SensitivityFactor,
     ImpactDirection,
-    ImpactMagnitude,
     TimeHorizon,
     CausalStep,
 } from '../models/types';

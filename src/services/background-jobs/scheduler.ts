@@ -170,10 +170,10 @@ export const scheduler = new JobScheduler();
  * Initialize default jobs
  * WHY: Set up standard background jobs for OpenCausenx
  */
-export function initializeJobs(): void {
+export async function initializeJobs(): Promise<void> {
     // Import job functions dynamically to avoid circular dependencies
-    const { fetchAndIngestEvents } = require('./jobs');
-    const { generateInsightsForAllBusinesses } = require('../insight-engine/generator');
+    const { fetchAndIngestEvents } = await import('./jobs');
+    const { generateInsightsForAllBusinesses } = await import('../insight-engine/generator');
 
     // Job 1: Fetch and ingest events
     scheduler.register(

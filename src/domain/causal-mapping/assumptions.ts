@@ -7,7 +7,7 @@
  * PRINCIPLE: No hidden logic. Every assumption is traceable and auditable.
  */
 
-import { EventType, SensitivityFactor, BusinessDriverType, Assumption } from '../models/types';
+import { EventType, Assumption } from '../models/types';
 
 /**
  * Core assumptions about how world events affect businesses

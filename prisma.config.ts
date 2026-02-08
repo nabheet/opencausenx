@@ -14,7 +14,7 @@ const envLocalPath = join(__dirname, ".env.local");
 
 try {
   readFileSync(envLocalPath, "utf-8");
-} catch (e) {
+} catch {
   // .env.local doesn't exist, will use .env
 }
 

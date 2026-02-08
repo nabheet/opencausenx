@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Insight } from '@/domain/models/Insight';
+import { Insight as PrismaInsight, Event as PrismaEvent } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     try {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Transform to domain models
-        const insightModels = insights.map((i: any) => ({
+        const insightModels = insights.map((i: PrismaInsight & { event: PrismaEvent | null }) => ({
             ...Insight.fromPrisma(i),
             event: i.event,
         }));

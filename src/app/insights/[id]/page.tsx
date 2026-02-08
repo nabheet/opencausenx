@@ -10,21 +10,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ConfidenceIndicator } from '@/components/insights/ConfidenceIndicator';
+import { InsightModel, CausalStep, Assumption, EventModel } from '@/domain/models/types';
+
+type InsightWithEvent = InsightModel & { event?: EventModel };
 
 export default function InsightDetailPage() {
     const params = useParams();
     const insightId = params?.id as string;
 
-    const [insight, setInsight] = useState<any>(null);
+    const [insight, setInsight] = useState<InsightWithEvent | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (insightId) {
-            fetchInsight();
-        }
-    }, [insightId]);
-
-    const fetchInsight = async () => {
+    const fetchInsight = React.useCallback(async () => {
         try {
             const response = await fetch(`/api/insights/${insightId}`);
             const data = await response.json();
@@ -34,7 +31,13 @@ export default function InsightDetailPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [insightId]);
+
+    useEffect(() => {
+        if (insightId) {
+            fetchInsight();
+        }
+    }, [insightId, fetchInsight]);
 
     if (loading) {
         return (
@@ -116,7 +119,7 @@ export default function InsightDetailPage() {
                             Causal Reasoning Chain
                         </h3>
                         <div className="space-y-4">
-                            {insight.causalPath.map((step: any, index: number) => (
+                            {insight.causalPath.map((step: CausalStep, index: number) => (
                                 <div
                                     key={index}
                                     className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg"
@@ -163,7 +166,7 @@ export default function InsightDetailPage() {
                             Key Assumptions
                         </h3>
                         <div className="space-y-3">
-                            {insight.assumptions.map((assumption: any, index: number) => (
+                            {insight.assumptions.map((assumption: Assumption, index: number) => (
                                 <div
                                     key={index}
                                     className="p-4 bg-yellow-50 rounded-lg border border-yellow-200"
@@ -172,10 +175,10 @@ export default function InsightDetailPage() {
                                         <p className="text-gray-800">{assumption.description}</p>
                                         <span
                                             className={`px-2 py-1 rounded text-xs font-medium ${assumption.impact === 'HIGH'
-                                                    ? 'bg-red-100 text-red-700'
-                                                    : assumption.impact === 'MEDIUM'
-                                                        ? 'bg-yellow-100 text-yellow-700'
-                                                        : 'bg-gray-100 text-gray-700'
+                                                ? 'bg-red-100 text-red-700'
+                                                : assumption.impact === 'MEDIUM'
+                                                    ? 'bg-yellow-100 text-yellow-700'
+                                                    : 'bg-gray-100 text-gray-700'
                                                 }`}
                                         >
                                             {assumption.impact} impact

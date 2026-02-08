@@ -131,7 +131,7 @@ export class BusinessModel implements BusinessModelConfig {
         // Check regions are valid ISO codes (basic check)
         const allRegions = [...this.operatingRegions, ...this.customerRegions];
         for (const region of allRegions) {
-            if (region.length < 2 || region.length > 3) {
+            if (region.length < 2 || region.length > 5) {
                 errors.push(`Invalid region code: ${region}`);
             }
         }

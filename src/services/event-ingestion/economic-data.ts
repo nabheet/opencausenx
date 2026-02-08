@@ -5,7 +5,7 @@
  * In production, integrate with APIs like FRED, World Bank, OECD, etc.
  */
 
-import { EventType, AffectedEntity } from '@/domain/models/types';
+import { AffectedEntity } from '@/domain/models/types';
 
 export interface EconomicIndicator {
     indicator: string;
