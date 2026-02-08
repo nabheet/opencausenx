@@ -69,12 +69,13 @@ async function main() {
     console.log('✅ Created event sources');
 
     // Create sample events
+    const now = Date.now();
     const sampleEvents = [
         {
             eventType: EventType.LABOR_MARKET,
             summary: 'US tech sector wages increased 8% year-over-year, driven by high demand for software engineers and competitive talent acquisition.',
             region: 'US',
-            timestamp: new Date('2024-01-15'),
+            timestamp: new Date(now - 7 * 24 * 60 * 60 * 1000),
             affectedEntities: [AffectedEntity.TECH_COMPANIES, AffectedEntity.LABOR_FORCE],
             source: 'Bureau of Labor Statistics via Reuters',
             sourceId: rssSource.id,
@@ -85,7 +86,7 @@ async function main() {
             eventType: EventType.INFRASTRUCTURE,
             summary: 'Major cloud providers announced 15% price increase for compute instances starting Q2 2024, citing increased energy costs.',
             region: 'GLOBAL',
-            timestamp: new Date('2024-01-20'),
+            timestamp: new Date(now - 5 * 24 * 60 * 60 * 1000),
             affectedEntities: [AffectedEntity.TECH_COMPANIES, AffectedEntity.INFRASTRUCTURE_PROVIDERS],
             source: 'AWS, Azure, GCP announcements',
             sourceId: rssSource.id,
@@ -96,7 +97,7 @@ async function main() {
             eventType: EventType.ECONOMIC_INDICATOR,
             summary: 'US GDP growth slowed to 1.8% in Q4 2023, below expectations of 2.2%, indicating potential economic headwinds.',
             region: 'US',
-            timestamp: new Date('2024-01-10'),
+            timestamp: new Date(now - 10 * 24 * 60 * 60 * 1000),
             affectedEntities: [AffectedEntity.ALL],
             source: 'Bureau of Economic Analysis',
             sourceId: economicSource.id,
@@ -107,7 +108,7 @@ async function main() {
             eventType: EventType.REGULATION_CHANGE,
             summary: 'EU announces stricter data privacy regulations requiring additional compliance measures for software companies operating in Europe.',
             region: 'EU',
-            timestamp: new Date('2024-01-25'),
+            timestamp: new Date(now - 3 * 24 * 60 * 60 * 1000),
             affectedEntities: [AffectedEntity.TECH_COMPANIES],
             source: 'European Commission',
             sourceId: rssSource.id,
